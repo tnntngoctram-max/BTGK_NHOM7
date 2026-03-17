@@ -1,0 +1,95 @@
+@{
+    ViewBag.Title = "Tải lên Đề thi TOEIC";
+}
+
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <div class="container-fluid">
+        <div class="card shadow-sm mt-5">
+
+            <!-- HEADER -->
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold text-primary">
+                    Tải lên & Bóc tách đề thi TOEIC Reading
+                </h3>
+            </div>
+
+            <!-- BODY -->
+            <div class="card-body">
+
+                <form asp-controller="ToeicExams"
+                      asp-action="UploadExam"
+                      method="post"
+                      enctype="multipart/form-data">
+
+                    <!-- FILE INPUT -->
+                    <div class="form-group mb-4">
+                        <label class="font-weight-bold">
+                            File đề thi (.docx) <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="file"
+                               name="file"
+                               accept=".docx"
+                               required
+                               class="form-control mt-2" />
+
+                        <small class="form-text text-muted mt-2">
+                            Vui lòng chọn file Word tuân thủ đúng định dạng thẻ Tags mà hệ thống yêu cầu.
+                        </small>
+                    </div>
+
+                    <!-- PREVIEW FILE NAME -->
+                    <div id="fileNamePreview" class="text-info mb-3"></div>
+
+                    <!-- BUTTON -->
+                    <button type="submit" class="btn btn-primary">
+                        Bắt đầu xử lý
+                    </button>
+
+                    <!-- LOADING -->
+                    <div id="loading" class="mt-3 text-warning" style="display:none;">
+                        Đang xử lý file... vui lòng chờ
+                    </div>
+
+                    <!-- SUCCESS -->
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success mt-3">
+                            @TempData["Success"]
+                        </div>
+                    }
+
+                    <!-- ERROR -->
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger mt-3">
+                            @TempData["Error"]
+                        </div>
+                    }
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPT -->
+<script>
+    const fileInput = document.querySelector('input[type="file"]');
+    const preview = document.getElementById('fileNamePreview');
+    const loading = document.getElementById('loading');
+    const form = document.querySelector('form');
+
+    // Hiển thị tên file
+    fileInput.addEventListener('change', function () {
+        if (this.files.length > 0) {
+            preview.innerText = "📎 File đã chọn: " + this.files[0].name;
+        }
+    });
+
+    // Hiện loading khi submit
+    form.addEventListener('submit', function () {
+        loading.style.display = 'block';
+    });
+</script>

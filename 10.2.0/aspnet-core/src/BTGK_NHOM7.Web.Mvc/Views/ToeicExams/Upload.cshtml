@@ -1,0 +1,18 @@
+<div class="card">
+    <div class="card-header">
+        <h5>TẢI LÊN & BÓC TÁCH ĐỀ THI TOEIC READING</h5>
+    </div>
+    <div class="card-body">
+        <form asp-action="Upload" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Tên đề thi *</label>
+                <input type="text" class="form-control" placeholder="VD: TOEIC Reading Test 01 - ETS 2024" />
+            </div>
+            <div class="form-group border-dashed p-5 text-center">
+                <input type="file" name="file" class="form-control-file" />
+                <p>Click để chọn file Word (.docx)</p>
+            </div>
+            <button type="submit" class="btn btn-primary">Bắt đầu Tải lên & Xử lý</button>
+        </form>
+    </div>
+</div>
