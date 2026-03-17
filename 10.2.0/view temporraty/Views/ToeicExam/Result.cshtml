@@ -1,0 +1,23 @@
+<div class="text-center mb-5 p-5 bg-primary text-white rounded shadow">
+    <h2>Kết quả bài làm</h2>
+    <div class="score-circle mx-auto my-3 d-flex align-items-center justify-content-center border border-white rounded-circle" style="width:150px; height:150px; border-width: 5px !important;">
+        <h1 class="m-0">@Model.Score <small>/495</small></h1>
+    </div>
+    <h4>@Model.CorrectCount / 100 câu đúng</h4>
+</div>
+
+<div class="row">
+    @foreach(var part in Model.PartAnalysis) {
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm">
+                <div class="card-header">Part @part.PartNumber</div>
+                <div class="card-body">
+                    <h3>@part.CorrectCount / @part.TotalCount</h3>
+                    <div class="progress">
+                        <div class="progress-bar" style="width: @part.Percentage%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

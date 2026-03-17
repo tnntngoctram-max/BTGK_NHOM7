@@ -1,0 +1,31 @@
+@model BTGK_NHOM7.Entities.ToeicExam
+<div class="container-fluid">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between">
+            <h4 class="m-0 font-weight-bold text-primary">@Model.Title (Parse: @Model.Questions.Count/100 câu)</h4>
+            <button class="btn btn-success" onclick="publishExam(@Model.Id)">Xuất bản Đề Thi (Publish)</button>
+        </div>
+        <div class="card-body">
+            <ul class="nav nav-tabs mb-3" id="toeicTab" role="tablist">
+                <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#part5">Part 5</a></li>
+                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#part6">Part 6</a></li>
+                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#part7">Part 7</a></li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="part5">
+                    @foreach (var q in Model.Parts.FirstOrDefault(p => p.PartNumber == 5)?.Questions ?? new List<ToeicQuestion>()) {
+                        <div class="border p-3 mb-2 rounded bg-light">
+                            <div class="d-flex justify-content-between">
+                                <strong>Câu @q.QuestionNumber</strong>
+                                <button class="btn btn-sm btn-outline-primary" onclick="editQuestion(@q.Id)">Chỉnh sửa</button>
+                            </div>
+                            <p>@q.QuestionText</p>
+                            <span class="badge @(q.CorrectAnswer == "A" ? "badge-success" : "badge-secondary")">[A] @q.OptionA</span>
+                            </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
