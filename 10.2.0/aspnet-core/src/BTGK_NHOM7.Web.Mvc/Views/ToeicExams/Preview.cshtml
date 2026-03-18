@@ -5,6 +5,14 @@
 }
 
 <div class="container-fluid">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success mb-4 shadow-sm">
+            @TempData["Success"]
+        </div>
+    }
+
     <div class="card shadow-sm mb-4">
 
         <!-- HEADER -->
@@ -12,9 +20,9 @@
             <h4 class="m-0 font-weight-bold text-primary">
                 @Model.Title (Parse: @Model.Questions.Count/100 câu)
             </h4>
-            <button class="btn btn-success" onclick="publishExam(@Model.Id)">
-                Xuất bản Đề Thi
-            </button>
+            <a asp-action="Publish" asp-route-id="@Model.Id" class="btn btn-success font-weight-bold">
+                <i class="fas fa-upload"></i> Xuất bản Đề Thi
+            </a>
         </div>
 
         <div class="card-body">
@@ -43,12 +51,12 @@
 
                     @foreach (var q in part5?.Questions ?? new List<ToeicQuestion>())
                     {
-                        <div class="border p-3 mb-3 rounded bg-light">
+                        <div class="border p-3 mb-3 rounded bg-light" id="question_@q.Id">
                             <div class="d-flex justify-content-between">
                                 <strong>Câu @q.QuestionNumber</strong>
-                                <button class="btn btn-sm btn-outline-primary" onclick="editQuestion(@q.Id)">
-                                    Chỉnh sửa
-                                </button>
+                                <a asp-action="EditQuestion" asp-route-id="@q.Id" asp-route-examId="@Model.Id" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Chỉnh sửa
+                                </a>
                             </div>
 
                             <p>@q.QuestionText</p>
@@ -85,8 +93,13 @@
 
                             @foreach (var q in passage.Questions ?? new List<ToeicQuestion>())
                             {
-                                <div class="mt-3 border-top pt-2">
-                                    <strong>Câu @q.QuestionNumber</strong>
+                                <div class="mt-3 border-top pt-2" id="question_@q.Id">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Câu @q.QuestionNumber</strong>
+                                        <a asp-action="EditQuestion" asp-route-id="@q.Id" asp-route-examId="@Model.Id" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i> Chỉnh sửa
+                                        </a>
+                                    </div>
                                     <p>@q.QuestionText</p>
 
                                     @foreach (var opt in new[] {
@@ -125,8 +138,13 @@
 
                             @foreach (var q in passage.Questions ?? new List<ToeicQuestion>())
                             {
-                                <div class="mb-3">
-                                    <strong>Câu @q.QuestionNumber</strong>
+                                <div class="mb-3" id="question_@q.Id">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Câu @q.QuestionNumber</strong>
+                                        <a asp-action="EditQuestion" asp-route-id="@q.Id" asp-route-examId="@Model.Id" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i> Chỉnh sửa
+                                        </a>
+                                    </div>
                                     <p>@q.QuestionText</p>
 
                                     @foreach (var opt in new[] {
@@ -152,3 +170,56 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var examId = '@Model.Id';
+            var storageKey = 'activeTab_ExamPreview_' + examId;
+            
+            // 1. Kiểm tra xem URL có chứa hash của câu hỏi không (ví dụ: #question_123)
+            var hash = window.location.hash;
+            var targetQuestion = null;
+            var targetTab = null;
+
+            if (hash && hash.startsWith('#question_')) {
+                targetQuestion = $(hash);
+                if (targetQuestion.length > 0) {
+                    // Tìm tab chứa câu hỏi này
+                    var pane = targetQuestion.closest('.tab-pane');
+                    if (pane.length > 0) {
+                        targetTab = '#' + pane.attr('id');
+                    }
+                }
+            }
+
+            // 2. Ưu tiên mở tab chứa câu hỏi từ URL hash, nếu không có thì lấy từ localStorage
+            var activeTab = targetTab || localStorage.getItem(storageKey);
+            
+            if (activeTab) {
+                $('.nav-link').removeClass('active');
+                $('.tab-pane').removeClass('show active');
+                
+                $('a[href="' + activeTab + '"]').addClass('active');
+                $(activeTab).addClass('show active');
+            }
+
+            // 3. Scroll tới câu hỏi nếu có
+            if (targetQuestion && targetQuestion.length > 0) {
+                setTimeout(function() {
+                    $('html, body').animate({
+                        scrollTop: targetQuestion.offset().top - 100 // Trừ hao khoảng cách header nếu có
+                    }, 500);
+                }, 200);
+            }
+
+            // 4. Lưu tab hiện tại vào bộ nhớ trình duyệt khi click chuyển tab
+            $('a[data-bs-toggle="tab"]').on('shown.bs.tab click', function (e) {
+                var target = $(e.currentTarget).attr("href");
+                if (target && target.startsWith('#part')) {
+                    localStorage.setItem(storageKey, target);
+                }
+            });
+        });
+    </script>
+}

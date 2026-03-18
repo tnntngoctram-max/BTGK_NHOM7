@@ -5,8 +5,12 @@
     <div class="card-body">
         <form asp-action="Upload" method="post" enctype="multipart/form-data">
             <div class="form-group">
-                <label>Tên đề thi *</label>
-                <input type="text" class="form-control" placeholder="VD: TOEIC Reading Test 01 - ETS 2024" />
+                <label>Tên đề thi</label>
+                <input type="text" name="title" class="form-control" placeholder="VD: TOEIC Reading Test 01 - ETS 2024" />
+            </div>
+            <div class="form-group">
+                <label>Thời gian làm bài (Phút)</label>
+                <input type="number" name="timeMinutes" class="form-control" placeholder="VD: 120" />
             </div>
             <div class="form-group border-dashed p-5 text-center">
                 <input type="file" name="file" class="form-control-file" />

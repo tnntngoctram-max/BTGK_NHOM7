@@ -21,6 +21,22 @@
                       method="post"
                       enctype="multipart/form-data">
 
+                    <!-- EXAM TITLE -->
+                    <div class="form-group mb-4">
+                        <label class="font-weight-bold">
+                            Tên đề thi
+                        </label>
+                        <input type="text" name="title" class="form-control mt-2" placeholder="VD: TOEIC Reading Test 01 (Bỏ trống nếu file Word đã có thẻ [EXAM_TITLE])" />
+                    </div>
+
+                    <!-- EXAM TIME -->
+                    <div class="form-group mb-4">
+                        <label class="font-weight-bold">
+                            Thời gian làm bài (Phút)
+                        </label>
+                        <input type="number" name="timeMinutes" class="form-control mt-2" placeholder="VD: 120 (Bỏ trống nếu file Word đã có thẻ [EXAM_TIME])" />
+                    </div>
+
                     <!-- FILE INPUT -->
                     <div class="form-group mb-4">
                         <label class="font-weight-bold">

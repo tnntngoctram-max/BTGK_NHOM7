@@ -1,65 +1,88 @@
 @using BTGK_NHOM7.Entities
 @model List<ToeicExam>
-
 @{
-    ViewBag.Title = "Danh sách Đề thi TOEIC";
+    ViewBag.Title = "Danh sách đề thi";
 }
 
-<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+<div class="content d-flex flex-column flex-column-fluid mt-5">
     <div class="container-fluid">
-        <div class="card shadow-sm mt-5 border-0" style="border-radius: 12px;">
-            <div class="card-header bg-white py-4 d-flex justify-content-between align-items-center">
-                <h3 class="card-title font-weight-bolder text-primary mb-0">
-                    <i class="fas fa-book-open mr-2"></i> Danh sách Đề thi TOEIC
-                </h3>
-                <a asp-action="Index" class="btn btn-info font-weight-bold shadow-sm">
-                    <i class="fas fa-upload mr-1"></i> Tải lên đề mới
-                </a>
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <h2 class="font-weight-bolder text-primary m-0">Danh sách đề thi TOEIC</h2>
+            
+            <div>
+                @if (User.IsInRole("Admin") || User.IsInRole("GiangVien"))
+                {
+                    <a asp-action="Index" class="btn btn-success font-weight-bold rounded-pill px-4 py-2 shadow-sm mr-2">
+                        <i class="fas fa-plus mr-2"></i> Tạo đề thi
+                    </a>
+                }
+                @if (User.IsInRole("HocVien"))
+                {
+                    <a asp-action="History" class="btn btn-warning font-weight-bold rounded-pill px-4 py-2 shadow-sm">
+                        <i class="fas fa-history mr-2"></i> Lịch sử làm bài
+                    </a>
+                }
             </div>
-            <div class="card-body p-0">
-                <table class="table table-hover table-striped mb-0">
-                    <thead class="thead-light font-weight-bold">
-                        <tr>
-                            <th class="text-center" style="width: 5%">STT</th>
-                            <th>Tên đề thi</th>
-                            <th class="text-center" style="width: 15%">Thời gian</th>
-                            <th class="text-center" style="width: 20%">Ngày tạo</th>
-                            <th class="text-center" style="width: 20%">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model != null && Model.Any())
-                        {
-                            for (int i = 0; i < Model.Count; i++)
-                            {
-                                var exam = Model[i];
-                                <tr style="transition: background-color 0.2s;">
-                                    <td class="text-center align-middle">@(i + 1)</td>
-                                    <td class="align-middle font-weight-bold text-dark" style="font-size: 1.1rem;">@exam.Title</td>
-                                    <td class="text-center align-middle"><span class="badge badge-secondary px-3 py-2">@exam.TimeMinutes phút</span></td>
-                                    <td class="text-center align-middle">@exam.CreationTime.ToString("dd/MM/yyyy HH:mm")</td>
-                                    <td class="text-center align-middle">
-                                        <a asp-action="Exam" asp-route-id="@exam.Id" class="btn btn-sm btn-success font-weight-bold mr-2 shadow-sm">
-                                            <i class="fas fa-edit"></i> Làm bài
-                                        </a>
-                                        <a asp-action="Preview" asp-route-id="@exam.Id" class="btn btn-sm btn-light text-primary font-weight-bold border shadow-sm">
-                                            <i class="fas fa-eye"></i> Xem trước
-                                        </a>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">
-                                    Chưa có đề thi nào trong hệ thống. Vui lòng tải lên đề thi mới!
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        </div>
+        
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success mb-4 shadow-sm">
+                @TempData["Success"]
             </div>
+        }
+
+        <div class="row">
+            @if (Model != null && Model.Any())
+            {
+                foreach (var exam in Model)
+                {
+                    <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+                        <div class="card shadow-sm h-100 border-0 rounded-lg hover-elevate-up" style="transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="bg-light-primary text-primary rounded px-3 py-1 font-weight-bold">
+                                        TOEIC Reading
+                                    </div>
+                                    <span class="text-muted font-weight-bold">
+                                        <i class="far fa-clock"></i> @exam.TimeMinutes phút
+                                    </span>
+                                </div>
+                                <h4 class="font-weight-bolder text-dark mb-3 line-height-lg">@exam.Title</h4>
+                                
+                                <div class="mt-auto pt-4 d-flex justify-content-between align-items-center">
+                                    <div class="text-muted font-weight-bold">
+                                        <i class="fas fa-list-ol mr-1"></i> 100 câu
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        @if (User.IsInRole("Admin") || User.IsInRole("GiangVien"))
+                                        {
+                                            <a asp-action="Preview" asp-route-id="@exam.Id" class="btn btn-outline-primary font-weight-bold rounded-pill px-3 py-2 mr-2" title="Chỉnh sửa đề thi">
+                                                <i class="fas fa-edit m-0"></i>
+                                            </a>
+                                            <form asp-action="Delete" asp-route-id="@exam.Id" method="post" class="m-0" onsubmit="return confirm('Bạn có chắc chắn muốn xóa đề thi này không? Hành động này không thể hoàn tác!');">
+                                                <button type="submit" class="btn btn-outline-danger font-weight-bold rounded-pill px-3 py-2" title="Xóa đề thi">
+                                                    <i class="fas fa-trash-alt m-0"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        @if (User.IsInRole("HocVien"))
+                                        {
+                                            <a asp-action="Exam" asp-route-id="@exam.Id" class="btn btn-primary font-weight-bold px-4 py-2 rounded-pill">
+                                                Làm bài <i class="fas fa-arrow-right ml-1"></i>
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12"><div class="alert alert-custom alert-light-warning">Hiện tại chưa có đề thi nào!</div></div>
+            }
         </div>
     </div>
 </div>

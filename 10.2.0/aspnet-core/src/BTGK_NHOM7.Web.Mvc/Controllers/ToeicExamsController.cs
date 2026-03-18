@@ -9,6 +9,7 @@ using BTGK_NHOM7.ToeicExams.Dto;
 using Abp.UI;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using BTGK_NHOM7.Entities;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BTGK_NHOM7.Web.Controllers
 {
@@ -19,16 +20,28 @@ namespace BTGK_NHOM7.Web.Controllers
         {
             _toeicExamAppService = toeicExamAppService;
         }
-
-        //Hiển thị giao diện tải trang web lên
+        [Authorize(Roles = "Admin,GiangVien,HocVien")]
         public ActionResult Index()
         {
-            return View();
+            if (User.IsInRole("Admin") || User.IsInRole("GiangVien"))
+            {
+                return View();
+            }
+
+            if (User.IsInRole("HocVien"))
+            {
+                return RedirectToAction("List");
+            }
+
+            return Unauthorized();
         }
+        //Hiển thị giao diện tải trang web lên
+        
 
         //Khi Giảng viên bấm nút "Tải lên"
         [HttpPost]
-        public async Task<ActionResult> UploadExam(IFormFile file)
+        [Authorize(Roles = "Admin,GiangVien")]
+        public async Task<ActionResult> UploadExam(IFormFile file, string title, int? timeMinutes)
         {
             try
             {
@@ -61,7 +74,7 @@ namespace BTGK_NHOM7.Web.Controllers
                     //await _toeicExamAppService.UploadAndParseExamAsync(dto);
 
                     //Sau này nếu service trả ID thì mở dòng này
-                    examId = await _toeicExamAppService.UploadAndParseExamAsync(dto);
+                    examId = await _toeicExamAppService.UploadAndParseExamAsync(dto, title, timeMinutes ?? 0);
                 }
 
                 TempData["Success"] = "Upload & bóc tách thành công!";
@@ -86,19 +99,21 @@ namespace BTGK_NHOM7.Web.Controllers
                 return RedirectToAction("Index");
             }
         }
-
+        [Authorize(Roles = "Admin,GiangVien")]
         public async Task<ActionResult> Preview(int id)
             {
                 var exam = await _toeicExamAppService.GetExamForPreview(id);
                 return View(exam);
             }
 
+        [Authorize(Roles = "Admin,GiangVien,HocVien")]
         public async Task<ActionResult> List()
         {
             var exams = await _toeicExamAppService.GetExamListAsync();
             return View(exams);
         }
 
+        [Authorize(Roles = "HocVien")]
         public async Task<ActionResult> Exam(int id)
         {
             var exam = await _toeicExamAppService.GetExamForPreview(id);
@@ -106,10 +121,89 @@ namespace BTGK_NHOM7.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> SubmitExam(int examId, List<UserAnswer> answers)
+        [Authorize(Roles = "HocVien")]
+        public async Task<ActionResult> SubmitExam(int examId, int timeTakenSeconds, List<UserAnswer> answers)
         {
-            var result = await _toeicExamAppService.CalculateScore(examId, answers);
+            var result = await _toeicExamAppService.CalculateAndSaveScore(examId, answers, timeTakenSeconds);
+            ViewBag.TimeTakenSeconds = timeTakenSeconds;
             return View("Result", result);
+        }
+
+    // 1. Action hiển thị trang chỉnh sửa
+        [HttpGet]
+        [Authorize(Roles = "Admin,GiangVien")]
+        public async Task<ActionResult> Edit(int id)
+        {
+            var exam = await _toeicExamAppService.GetExamForPreview(id);
+            if (exam == null)
+            {
+                return NotFound();
+            }
+            return View(exam); // Bạn cần có file View Edit.cshtml tương ứng
+        }
+
+        // 2. Action xử lý lưu sau khi chỉnh sửa
+        [HttpPost]
+        [Authorize(Roles = "Admin,GiangVien")]
+        public async Task<ActionResult> Edit(int id, ToeicExam input)
+        {
+            // Tạm ẩn đến khi bạn khai báo interface:
+            // await _toeicExamAppService.UpdateExamAsync(id, input);
+            TempData["Success"] = "Cập nhật đề thi thành công!";
+            return RedirectToAction("Preview", new { id = id });
+        }
+
+        // 3. Action xử lý xuất bản đề thi
+        // Thay đổi để dùng được cho cả thẻ <a> (GET) và <form> (POST)
+        [HttpGet, HttpPost]
+        [Authorize(Roles = "Admin,GiangVien")]
+        public async Task<ActionResult> Publish(int id)
+        {
+            // Giả sử thực thể ToeicExam của bạn có trường IsPublished
+            // Tạm ẩn đến khi bạn khai báo interface:
+            // await _toeicExamAppService.PublishExamAsync(id);
+            TempData["Success"] = "Xuất bản đề thi thành công!";
+            return RedirectToAction("List");
+        }
+
+        // Action lấy thông tin câu hỏi để hiển thị ra View sửa
+        [HttpGet]
+        [Authorize(Roles = "Admin,GiangVien")]
+        public async Task<ActionResult> EditQuestion(int id, int examId)
+        {
+            var question = await _toeicExamAppService.GetQuestionAsync(id);
+            if (question == null) return NotFound();
+            ViewBag.ExamId = examId;
+            return View(question);
+        }
+
+        // Action lưu thông tin câu hỏi
+        [HttpPost]
+        [Authorize(Roles = "Admin,GiangVien")]
+        public async Task<ActionResult> EditQuestion(int id, int examId, ToeicQuestion input)
+        {
+            await _toeicExamAppService.UpdateQuestionAsync(id, input);
+            TempData["Success"] = "Cập nhật câu hỏi thành công!";
+            return RedirectToAction("Preview", "ToeicExams", new { id = examId }, "question_" + id);
+        }
+
+        // 6. Action Xóa đề thi
+        [HttpPost]
+        [Authorize(Roles = "Admin,GiangVien")]
+        public async Task<ActionResult> Delete(int id)
+        {
+            await _toeicExamAppService.DeleteExamAsync(id);
+            TempData["Success"] = "Xóa đề thi thành công!";
+            return RedirectToAction("List");
+        }
+
+        // 7. Action Xem lịch sử làm bài (Học viên)
+        [HttpGet]
+        [Authorize(Roles = "HocVien")]
+        public async Task<ActionResult> History()
+        {
+            var userHistory = await _toeicExamAppService.GetUserHistoryAsync();
+            return View(userHistory);
         }
     }
 }

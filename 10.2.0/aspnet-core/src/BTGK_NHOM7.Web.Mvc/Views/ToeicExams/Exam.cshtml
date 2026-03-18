@@ -3,88 +3,111 @@
 @{
     ViewBag.Title = "Làm bài thi: " + Model.Title;
     int qIndex = 0;
+    
+    // Đếm tổng số câu hỏi cho phiếu trả lời
+    int totalQuestions = 0;
+    foreach(var p in Model.Parts) {
+        if (p.Questions != null) totalQuestions += p.Questions.Count;
+    }
 }
 
 <style>
-    .exam-header {
-        position: sticky;
-        top: 0;
-        z-index: 1020;
-        background-color: #ffffff;
-        border-bottom: 2px solid #eaeaea;
-    }
-    .passage-box {
-        background-color: #fdfdfd;
-        border-left: 5px solid #17a2b8;
-        line-height: 1.8;
-    }
-    .question-card {
-        border-radius: 10px;
-        transition: all 0.2s;
-    }
-    .question-card:hover {
-        background-color: #f8f9fa;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    }
+    body { background-color: #f4f6f9; }
+    .exam-header { position: sticky; top: 0; z-index: 1020; background: #fff; border-bottom: 2px solid #e9ecef; }
+    .question-card { border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.2s; background: #fff; scroll-margin-top: 100px; }
+    .question-card:hover { box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-color: #b5b5c3; }
+    .passage-box { background: #f8f9fa; border-left: 4px solid #3699ff; border-radius: 4px; font-size: 1.1rem; line-height: 1.7; }
+    
+    /* Answer sheet styling */
+    .answer-sheet-container { position: sticky; top: 100px; max-height: calc(100vh - 120px); overflow-y: auto; background: #fff; border-radius: 12px; border: 1px solid #e9ecef; }
+    .q-btn { width: 35px; height: 35px; padding: 0; border-radius: 50%; font-weight: 600; margin: 4px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #e4e6ef; color: #3f4254; cursor: pointer; text-decoration: none;}
+    .q-btn:hover { background: #f3f6f9; color: #3699ff; }
+    .q-btn.answered { background: #3699ff; color: #fff; border-color: #3699ff; }
+    .q-btn.active { box-shadow: 0 0 0 0.2rem rgba(54, 153, 255, 0.25); border-color: #3699ff; }
+    
+    .custom-control-label::before, .custom-control-label::after { width: 1.25rem; height: 1.25rem; }
+    .custom-radio .custom-control-input:checked ~ .custom-control-label::before { background-color: #3699ff; border-color: #3699ff; }
 </style>
 
-<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-    <div class="container-fluid">
-        <div class="card shadow mt-4 border-0">
-            <div class="card-header exam-header d-flex justify-content-between align-items-center py-4 shadow-sm">
-                <h3 class="card-title font-weight-bold text-primary mb-0">@Model.Title</h3>
-                <div class="timer bg-danger text-white font-weight-bold rounded px-4 py-2 shadow" style="font-size: 1.5rem; letter-spacing: 2px;" title="Thời gian còn lại">
-                    <i class="far fa-clock mr-2"></i> <span id="countdown">@Model.TimeMinutes:00</span>
+<div class="content d-flex flex-column flex-column-fluid mt-3" id="kt_content">
+    
+    <!-- Top Header -->
+    <div class="exam-header py-3 shadow-sm mb-4">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <h3 class="m-0 font-weight-bolder text-dark">@Model.Title</h3>
+            <div class="d-flex align-items-center">
+                <div class="bg-light-danger text-danger font-weight-bolder rounded-pill px-4 py-2 mr-3" style="font-size: 1.25rem; letter-spacing: 1px;">
+                    <i class="far fa-clock mr-1 text-danger"></i> <span id="countdown">@Model.TimeMinutes:00</span>
                 </div>
+                <button type="button" class="btn btn-success font-weight-bold rounded-pill px-4" onclick="confirmSubmit()">
+                    <i class="fas fa-check-circle mr-1"></i> Nộp bài
+                </button>
             </div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <form id="examForm" asp-action="SubmitExam" method="post">
+            <input type="hidden" name="examId" value="@Model.Id" />
+            <input type="hidden" name="timeTakenSeconds" id="timeTakenSeconds" value="0" />
             
-            <div class="card-body">
-                <form id="examForm" asp-action="SubmitExam" method="post">
-                    <input type="hidden" name="examId" value="@Model.Id" />
+            <div class="row">
+                <!-- Cột trái: Nội dung câu hỏi -->
+                <div class="col-xl-9 col-lg-8">
                     @foreach (var part in Model.Parts)
                     {
-                        <div class="mb-5 pb-4 border-bottom">
-                            <h4 class="text-info font-weight-bolder mb-4 text-uppercase"><i class="fas fa-bookmark mr-2"></i>@part.Title</h4>
+                        <div class="mb-5">
+                            <div class="bg-white p-4 rounded-lg shadow-sm border mb-4">
+                                <h4 class="text-primary font-weight-bolder m-0 text-uppercase"><i class="fas fa-book-open mr-2"></i>@part.Title</h4>
+                            </div>
                             
                             @if (part.Passages != null && part.Passages.Any())
                             {
                                 foreach (var passage in part.Passages)
                                 {
-                                    <div class="passage-box p-4 mb-4 rounded shadow-sm border border-light">
-                                        <div style="white-space: pre-wrap; font-size: 1.15rem;" class="text-dark text-justify">@passage.Content</div>
-                                    </div>
-                                    <div class="pl-md-4">
+                                    <div class="bg-white p-4 rounded-lg shadow-sm border mb-4">
+                                        <div class="passage-box p-4 mb-4 text-dark text-justify">
+                                            @passage.Content
+                                        </div>
+                                        <div class="pl-md-2">
                                         @foreach (var q in passage.Questions)
                                         {
-                                            <div class="mb-4 question-card p-3 border border-light">
-                                                <p class="font-weight-bold mb-3" style="font-size: 1.1rem;">Câu @q.QuestionNumber: <span style="white-space: pre-wrap;" class="font-weight-normal text-dark">@q.QuestionText</span></p>
+                                                <div class="mb-4 question-card p-4" id="question_@q.QuestionNumber">
+                                                    <h5 class="font-weight-bold mb-3 text-dark">
+                                                        <span class="badge badge-primary mr-2">Câu @q.QuestionNumber</span>
+                                                        <span style="white-space: pre-wrap; line-height: 1.6;" class="font-weight-normal">@q.QuestionText</span>
+                                                    </h5>
                                                 <input type="hidden" name="answers[@qIndex].QuestionId" value="@q.Id" />
-                                                <div class="ml-2">
-                                                    @if (!string.IsNullOrEmpty(q.OptionA)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="A" id="q_@(q.Id)_A"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_A"><span class="font-weight-bold">A.</span> @q.OptionA</label></div> }
-                                                    @if (!string.IsNullOrEmpty(q.OptionB)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="B" id="q_@(q.Id)_B"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_B"><span class="font-weight-bold">B.</span> @q.OptionB</label></div> }
-                                                    @if (!string.IsNullOrEmpty(q.OptionC)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="C" id="q_@(q.Id)_C"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_C"><span class="font-weight-bold">C.</span> @q.OptionC</label></div> }
-                                                    @if (!string.IsNullOrEmpty(q.OptionD)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="D" id="q_@(q.Id)_D"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_D"><span class="font-weight-bold">D.</span> @q.OptionD</label></div> }
+                                                    <div class="d-flex flex-column ml-3 mt-3">
+                                                        @if (!string.IsNullOrEmpty(q.OptionA)) { <div class="custom-control custom-radio mb-3"><input class="custom-control-input option-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="A" id="q_@(q.Id)_A" data-qnum="@q.QuestionNumber"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_A" style="font-size:1.1rem;"><span class="font-weight-bolder mr-1">A.</span> @q.OptionA</label></div> }
+                                                        @if (!string.IsNullOrEmpty(q.OptionB)) { <div class="custom-control custom-radio mb-3"><input class="custom-control-input option-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="B" id="q_@(q.Id)_B" data-qnum="@q.QuestionNumber"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_B" style="font-size:1.1rem;"><span class="font-weight-bolder mr-1">B.</span> @q.OptionB</label></div> }
+                                                        @if (!string.IsNullOrEmpty(q.OptionC)) { <div class="custom-control custom-radio mb-3"><input class="custom-control-input option-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="C" id="q_@(q.Id)_C" data-qnum="@q.QuestionNumber"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_C" style="font-size:1.1rem;"><span class="font-weight-bolder mr-1">C.</span> @q.OptionC</label></div> }
+                                                        @if (!string.IsNullOrEmpty(q.OptionD)) { <div class="custom-control custom-radio mb-3"><input class="custom-control-input option-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="D" id="q_@(q.Id)_D" data-qnum="@q.QuestionNumber"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_D" style="font-size:1.1rem;"><span class="font-weight-bolder mr-1">D.</span> @q.OptionD</label></div> }
                                                 </div>
                                             </div>
                                             qIndex++;
                                         }
+                                    </div>
                                     </div>
                                 }
                             }
                             
                             @if (part.Questions != null && part.Questions.Any(q => q.PassageId == null))
                             {
-                                <div class="pl-md-3 mt-3">
+                                <div class="bg-white p-4 rounded-lg shadow-sm border mb-4">
                                     @foreach (var q in part.Questions.Where(q => q.PassageId == null))
                                     {
-                                        <div class="mb-4 question-card p-3 border border-light">
-                                            <p class="font-weight-bold mb-3" style="font-size: 1.1rem;">Câu @q.QuestionNumber: <span style="white-space: pre-wrap;" class="font-weight-normal text-dark">@q.QuestionText</span></p>
+                                        <div class="mb-4 question-card p-4" id="question_@q.QuestionNumber">
+                                            <h5 class="font-weight-bold mb-3 text-dark">
+                                                <span class="badge badge-primary mr-2">Câu @q.QuestionNumber</span>
+                                                <span style="white-space: pre-wrap; line-height: 1.6;" class="font-weight-normal">@q.QuestionText</span>
+                                            </h5>
                                             <input type="hidden" name="answers[@qIndex].QuestionId" value="@q.Id" />
-                                            <div class="ml-2">
-                                                @if (!string.IsNullOrEmpty(q.OptionA)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="A" id="q_@(q.Id)_A"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_A"><span class="font-weight-bold">A.</span> @q.OptionA</label></div> }
-                                                @if (!string.IsNullOrEmpty(q.OptionB)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="B" id="q_@(q.Id)_B"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_B"><span class="font-weight-bold">B.</span> @q.OptionB</label></div> }
-                                                @if (!string.IsNullOrEmpty(q.OptionC)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="C" id="q_@(q.Id)_C"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_C"><span class="font-weight-bold">C.</span> @q.OptionC</label></div> }
-                                                @if (!string.IsNullOrEmpty(q.OptionD)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="D" id="q_@(q.Id)_D"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_D"><span class="font-weight-bold">D.</span> @q.OptionD</label></div> }
+                                            <div class="d-flex flex-column ml-3 mt-3">
+                                                @if (!string.IsNullOrEmpty(q.OptionA)) { <div class="custom-control custom-radio mb-3"><input class="custom-control-input option-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="A" id="q_@(q.Id)_A" data-qnum="@q.QuestionNumber"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_A" style="font-size:1.1rem;"><span class="font-weight-bolder mr-1">A.</span> @q.OptionA</label></div> }
+                                                @if (!string.IsNullOrEmpty(q.OptionB)) { <div class="custom-control custom-radio mb-3"><input class="custom-control-input option-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="B" id="q_@(q.Id)_B" data-qnum="@q.QuestionNumber"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_B" style="font-size:1.1rem;"><span class="font-weight-bolder mr-1">B.</span> @q.OptionB</label></div> }
+                                                @if (!string.IsNullOrEmpty(q.OptionC)) { <div class="custom-control custom-radio mb-3"><input class="custom-control-input option-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="C" id="q_@(q.Id)_C" data-qnum="@q.QuestionNumber"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_C" style="font-size:1.1rem;"><span class="font-weight-bolder mr-1">C.</span> @q.OptionC</label></div> }
+                                                @if (!string.IsNullOrEmpty(q.OptionD)) { <div class="custom-control custom-radio mb-3"><input class="custom-control-input option-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="D" id="q_@(q.Id)_D" data-qnum="@q.QuestionNumber"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_D" style="font-size:1.1rem;"><span class="font-weight-bolder mr-1">D.</span> @q.OptionD</label></div> }
                                             </div>
                                         </div>
                                         qIndex++;
@@ -93,29 +116,81 @@
                             }
                         </div>
                     }
-                    
-                    <div class="text-center mt-5 mb-3 pt-4">
-                        <button type="button" class="btn btn-lg btn-success px-5 py-3 font-weight-bold shadow-lg" style="border-radius: 50px; font-size: 1.2rem;" onclick="confirmSubmit()">
-                            <i class="fas fa-paper-plane mr-2"></i> Hoàn thành & Nộp bài
-                        </button>
+                </div>
+
+                <!-- Cột phải: Phiếu trả lời dính -->
+                <div class="col-xl-3 col-lg-4 d-none d-lg-block">
+                    <div class="answer-sheet-container p-4 shadow-sm">
+                        <h5 class="font-weight-bolder text-dark mb-4 text-center border-bottom pb-3">Phiếu trả lời</h5>
+                        
+                        <div class="d-flex justify-content-between mb-4">
+                            <div class="text-center">
+                                <h2 class="text-success font-weight-bolder mb-0" id="answeredCount">0</h2>
+                                <span class="text-muted" style="font-size: 0.9rem;">Đã làm</span>
+                            </div>
+                            <div class="text-center">
+                                <h2 class="text-danger font-weight-bolder mb-0" id="unansweredCount">@totalQuestions</h2>
+                                <span class="text-muted" style="font-size: 0.9rem;">Chưa làm</span>
+                            </div>
+                        </div>
+
+                        <div class="progress mb-4" style="height: 10px;">
+                            <div class="progress-bar bg-success" id="examProgress" role="progressbar" style="width: 0%"></div>
+                        </div>
+
+                        <div class="d-flex flex-wrap justify-content-center">
+                            @{
+                                var allQuestions = new List<ToeicQuestion>();
+                                foreach(var p in Model.Parts) {
+                                    if(p.Questions != null) {
+                                        allQuestions.AddRange(p.Questions);
+                                    }
+                                }
+                                var sortedQuestions = allQuestions.OrderBy(q => q.QuestionNumber).ToList();
+                            }
+                            @foreach(var q in sortedQuestions)
+                            {
+                                <a href="#question_@q.QuestionNumber" class="q-btn" id="btn_q_@q.QuestionNumber">@q.QuestionNumber</a>
+                            }
+                        </div>
                     </div>
-                </form>
+                </div>
             </div>
-        </div>
+            
+            <!-- Nút nộp bài dính dưới cùng cho Mobile -->
+            <div class="d-lg-none fixed-bottom bg-white p-3 shadow border-top d-flex justify-content-between align-items-center">
+                <span class="font-weight-bold">Đã làm: <span id="mobileAnsweredCount" class="text-success">0</span>/@totalQuestions</span>
+                <button type="button" class="btn btn-primary font-weight-bold" onclick="confirmSubmit()">Nộp bài</button>
+            </div>
+        </form>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        let timeInSeconds = @(Model.TimeMinutes * 60);
+        const totalTimeSeconds = @(Model.TimeMinutes * 60);
+        let timeInSeconds = totalTimeSeconds;
+        let timeTaken = 0;
         const countdownEl = document.getElementById('countdown');
+        const timeTakenInput = document.getElementById('timeTakenSeconds');
         const form = document.getElementById('examForm');
+        const totalQuestions = @totalQuestions;
 
         const timer = setInterval(() => {
             timeInSeconds--;
+            timeTaken++;
+            timeTakenInput.value = timeTaken;
+            
             let m = Math.floor(timeInSeconds / 60).toString().padStart(2, '0');
             let s = (timeInSeconds % 60).toString().padStart(2, '0');
             countdownEl.innerText = `${m}:${s}`;
+
+            if (timeInSeconds <= 300) { // 5 phút cuối
+                countdownEl.parentElement.classList.replace('bg-light-danger', 'bg-danger');
+                countdownEl.parentElement.classList.add('text-white');
+                countdownEl.classList.add('text-white');
+                countdownEl.previousElementSibling.classList.replace('text-danger', 'text-white');
+            }
 
             if (timeInSeconds <= 0) {
                 clearInterval(timer);
@@ -125,10 +200,37 @@
         }, 1000);
 
         function confirmSubmit() {
-            if (confirm('Bạn có chắc chắn muốn nộp bài không?')) {
+            let answered = document.querySelectorAll('.q-btn.answered').length;
+            let msg = answered < totalQuestions 
+                ? `Bạn còn ${totalQuestions - answered} câu chưa làm. Bạn có chắc chắn muốn nộp bài không?`
+                : `Bạn đã làm xong tất cả câu hỏi. Nộp bài ngay?`;
+                
+            if (confirm(msg)) {
                 clearInterval(timer);
                 form.submit();
             }
         }
+
+        $(document).ready(function() {
+            $('.option-input').change(function() {
+                let qNum = $(this).data('qnum');
+                $(`#btn_q_${qNum}`).addClass('answered');
+                
+                let answered = $('.q-btn.answered').length;
+                $('#answeredCount, #mobileAnsweredCount').text(answered);
+                $('#unansweredCount').text(totalQuestions - answered);
+                $('#examProgress').css('width', (answered / totalQuestions * 100) + '%');
+            });
+            
+            $(window).scroll(function() {
+                let scrollPos = $(document).scrollTop() + 150;
+                $('.question-card').each(function() {
+                    if (scrollPos >= $(this).offset().top && scrollPos <= $(this).offset().top + $(this).outerHeight()) {
+                        $('.q-btn').removeClass('active');
+                        $(`#btn_q_${$(this).attr('id').split('_')[1]}`).addClass('active');
+                    }
+                });
+            });
+        });
     </script>
 }

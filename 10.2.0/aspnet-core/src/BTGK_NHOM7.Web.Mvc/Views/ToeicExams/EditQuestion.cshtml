@@ -1,0 +1,53 @@
+@using BTGK_NHOM7.Entities
+@model ToeicQuestion
+
+@{
+    ViewBag.Title = "Chỉnh sửa Câu hỏi";
+}
+
+<div class="content d-flex flex-column flex-column-fluid mt-5">
+    <div class="container-fluid">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-4">
+                <h3 class="card-title font-weight-bolder text-primary mb-0">Chỉnh sửa câu hỏi @Model.QuestionNumber</h3>
+            </div>
+            <div class="card-body">
+                <form asp-action="EditQuestion" method="post">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" name="examId" value="@ViewBag.ExamId" />
+                    
+                    <div class="form-group mb-4">
+                        <label class="font-weight-bold">Nội dung câu hỏi</label>
+                        <textarea name="QuestionText" class="form-control" rows="3" required>@Model.QuestionText</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 form-group mb-4">
+                            <label class="font-weight-bold">Đáp án A</label>
+                            <input type="text" name="OptionA" class="form-control" value="@Model.OptionA" />
+                        </div>
+                        <div class="col-md-6 form-group mb-4">
+                            <label class="font-weight-bold">Đáp án B</label>
+                            <input type="text" name="OptionB" class="form-control" value="@Model.OptionB" />
+                        </div>
+                        <div class="col-md-6 form-group mb-4">
+                            <label class="font-weight-bold">Đáp án C</label>
+                            <input type="text" name="OptionC" class="form-control" value="@Model.OptionC" />
+                        </div>
+                        <div class="col-md-6 form-group mb-4">
+                            <label class="font-weight-bold">Đáp án D</label>
+                            <input type="text" name="OptionD" class="form-control" value="@Model.OptionD" />
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mb-4">
+                        <label class="font-weight-bold">Đáp án đúng (A, B, C, hoặc D) <span class="text-danger">*</span></label>
+                        <input type="text" name="CorrectAnswer" class="form-control" value="@Model.CorrectAnswer" required maxlength="1" style="text-transform: uppercase;" />
+                    </div>
+                    <button type="submit" class="btn btn-success font-weight-bold mr-2"><i class="fas fa-save"></i> Lưu câu hỏi</button>
+                    <a asp-action="Preview" asp-route-id="@ViewBag.ExamId" asp-fragment="question_@Model.Id" class="btn btn-light-primary font-weight-bold">Hủy</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
