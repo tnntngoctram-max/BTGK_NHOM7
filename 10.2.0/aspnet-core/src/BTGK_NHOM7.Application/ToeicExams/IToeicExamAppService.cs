@@ -11,7 +11,8 @@ namespace BTGK_NHOM7.ToeicExams
     {
         Task<int> UploadAndParseExamAsync(CreateExamFromWordDto input);
         Task<int> ImportToeicFromWord(Stream fileStream);
-        Task<ResultDto> CalculateScore(List<UserAnswer> answers);
+        Task<ResultDto> CalculateScore(int examId, List<UserAnswer> answers);
         Task<ToeicExam> GetExamForPreview(int id);
+        Task<List<ToeicExam>> GetExamListAsync();
     }
 }

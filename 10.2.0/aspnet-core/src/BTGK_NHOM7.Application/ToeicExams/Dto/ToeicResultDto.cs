@@ -8,6 +8,15 @@ namespace BTGK_NHOM7.ToeicExams.Dto
         public int CorrectCount { get; set; }
         public int WrongCount { get; set; }
         public int SkipCount { get; set; }
+        public List<PartAnalysisDto> PartAnalysis { get; set; } = new List<PartAnalysisDto>();
+    }
+
+    public class PartAnalysisDto
+    {
+        public int PartNumber { get; set; }
+        public int CorrectCount { get; set; }
+        public int TotalCount { get; set; }
+        public int Percentage => TotalCount > 0 ? (CorrectCount * 100) / TotalCount : 0;
     }
 
     public class UserAnswer

@@ -1,55 +1,134 @@
-<div class="row">
-    <div class="col-lg-9 col-md-8 overflow-auto" style="height: 85vh;">
-        <h3 class="mb-4">@Model.Title</h3>
-        <div id="exam-content">
-            @foreach (var part in Model.Parts) {
-                <h4>Part @part.PartNumber: @part.PartTitle</h4>
-                @foreach (var q in part.Questions) {
-                    <div class="question mb-5" id="q-@q.QuestionNumber">
-                        <p><strong>Câu @q.QuestionNumber:</strong> @q.QuestionText</p>
-                        <div class="options ml-3">
-                            <div class="custom-control custom-radio">
-                                <input type="radio" name="ans-@q.Id" class="answer-radio" data-qid="@q.QuestionNumber" value="A"> (A) @q.OptionA
-                            </div>
-                            </div>
-                    </div>
-                }
-            }
-        </div>
-    </div>
+@using BTGK_NHOM7.Entities
+@model ToeicExam
+@{
+    ViewBag.Title = "Làm bài thi: " + Model.Title;
+    int qIndex = 0;
+}
 
-    <div class="col-lg-3 col-md-4 border-left shadow-sm bg-white p-3">
-        <div class="sticky-top">
-            <h5 class="text-center">THỜI GIAN CÒN LẠI</h5>
-            <h2 class="text-danger text-center" id="countdown">75:00</h2>
-            <hr>
-            <h6>Phiếu trả lời</h6>
-            <div class="answer-sheet d-flex flex-wrap overflow-auto" style="max-height: 300px;">
-                @for (int i = 101; i <= 200; i++) {
-                    <a href="#q-@i" id="sheet-q-@i" class="btn btn-sm btn-outline-secondary m-1 rounded-circle" style="width: 35px;">@i</a>
-                }
+<style>
+    .exam-header {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background-color: #ffffff;
+        border-bottom: 2px solid #eaeaea;
+    }
+    .passage-box {
+        background-color: #fdfdfd;
+        border-left: 5px solid #17a2b8;
+        line-height: 1.8;
+    }
+    .question-card {
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+    .question-card:hover {
+        background-color: #f8f9fa;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+</style>
+
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <div class="container-fluid">
+        <div class="card shadow mt-4 border-0">
+            <div class="card-header exam-header d-flex justify-content-between align-items-center py-4 shadow-sm">
+                <h3 class="card-title font-weight-bold text-primary mb-0">@Model.Title</h3>
+                <div class="timer bg-danger text-white font-weight-bold rounded px-4 py-2 shadow" style="font-size: 1.5rem; letter-spacing: 2px;" title="Thời gian còn lại">
+                    <i class="far fa-clock mr-2"></i> <span id="countdown">@Model.TimeMinutes:00</span>
+                </div>
             </div>
-            <button class="btn btn-danger btn-block mt-4" onclick="confirmSubmit()">NỘP BÀI THI</button>
+            
+            <div class="card-body">
+                <form id="examForm" asp-action="SubmitExam" method="post">
+                    <input type="hidden" name="examId" value="@Model.Id" />
+                    @foreach (var part in Model.Parts)
+                    {
+                        <div class="mb-5 pb-4 border-bottom">
+                            <h4 class="text-info font-weight-bolder mb-4 text-uppercase"><i class="fas fa-bookmark mr-2"></i>@part.Title</h4>
+                            
+                            @if (part.Passages != null && part.Passages.Any())
+                            {
+                                foreach (var passage in part.Passages)
+                                {
+                                    <div class="passage-box p-4 mb-4 rounded shadow-sm border border-light">
+                                        <div style="white-space: pre-wrap; font-size: 1.15rem;" class="text-dark text-justify">@passage.Content</div>
+                                    </div>
+                                    <div class="pl-md-4">
+                                        @foreach (var q in passage.Questions)
+                                        {
+                                            <div class="mb-4 question-card p-3 border border-light">
+                                                <p class="font-weight-bold mb-3" style="font-size: 1.1rem;">Câu @q.QuestionNumber: <span style="white-space: pre-wrap;" class="font-weight-normal text-dark">@q.QuestionText</span></p>
+                                                <input type="hidden" name="answers[@qIndex].QuestionId" value="@q.Id" />
+                                                <div class="ml-2">
+                                                    @if (!string.IsNullOrEmpty(q.OptionA)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="A" id="q_@(q.Id)_A"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_A"><span class="font-weight-bold">A.</span> @q.OptionA</label></div> }
+                                                    @if (!string.IsNullOrEmpty(q.OptionB)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="B" id="q_@(q.Id)_B"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_B"><span class="font-weight-bold">B.</span> @q.OptionB</label></div> }
+                                                    @if (!string.IsNullOrEmpty(q.OptionC)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="C" id="q_@(q.Id)_C"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_C"><span class="font-weight-bold">C.</span> @q.OptionC</label></div> }
+                                                    @if (!string.IsNullOrEmpty(q.OptionD)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="D" id="q_@(q.Id)_D"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_D"><span class="font-weight-bold">D.</span> @q.OptionD</label></div> }
+                                                </div>
+                                            </div>
+                                            qIndex++;
+                                        }
+                                    </div>
+                                }
+                            }
+                            
+                            @if (part.Questions != null && part.Questions.Any(q => q.PassageId == null))
+                            {
+                                <div class="pl-md-3 mt-3">
+                                    @foreach (var q in part.Questions.Where(q => q.PassageId == null))
+                                    {
+                                        <div class="mb-4 question-card p-3 border border-light">
+                                            <p class="font-weight-bold mb-3" style="font-size: 1.1rem;">Câu @q.QuestionNumber: <span style="white-space: pre-wrap;" class="font-weight-normal text-dark">@q.QuestionText</span></p>
+                                            <input type="hidden" name="answers[@qIndex].QuestionId" value="@q.Id" />
+                                            <div class="ml-2">
+                                                @if (!string.IsNullOrEmpty(q.OptionA)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="A" id="q_@(q.Id)_A"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_A"><span class="font-weight-bold">A.</span> @q.OptionA</label></div> }
+                                                @if (!string.IsNullOrEmpty(q.OptionB)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="B" id="q_@(q.Id)_B"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_B"><span class="font-weight-bold">B.</span> @q.OptionB</label></div> }
+                                                @if (!string.IsNullOrEmpty(q.OptionC)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="C" id="q_@(q.Id)_C"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_C"><span class="font-weight-bold">C.</span> @q.OptionC</label></div> }
+                                                @if (!string.IsNullOrEmpty(q.OptionD)) { <div class="custom-control custom-radio mb-2"><input class="custom-control-input" type="radio" name="answers[@qIndex].SelectedAnswer" value="D" id="q_@(q.Id)_D"><label class="custom-control-label cursor-pointer" for="q_@(q.Id)_D"><span class="font-weight-bold">D.</span> @q.OptionD</label></div> }
+                                            </div>
+                                        </div>
+                                        qIndex++;
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    
+                    <div class="text-center mt-5 mb-3 pt-4">
+                        <button type="button" class="btn btn-lg btn-success px-5 py-3 font-weight-bold shadow-lg" style="border-radius: 50px; font-size: 1.2rem;" onclick="confirmSubmit()">
+                            <i class="fas fa-paper-plane mr-2"></i> Hoàn thành & Nộp bài
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
-<script>
-    // Xử lý đổi màu phiếu trả lời khi chọn đáp án
-    document.querySelectorAll('.answer-radio').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            const qNum = e.target.dataset.qid;
-            document.getElementById(`sheet-q-${qNum}`).classList.replace('btn-outline-secondary', 'btn-primary text-white');
-        });
-    });
+@section Scripts {
+    <script>
+        let timeInSeconds = @(Model.TimeMinutes * 60);
+        const countdownEl = document.getElementById('countdown');
+        const form = document.getElementById('examForm');
 
-    // Đồng hồ đếm ngược 75 phút
-    let time = 75 * 60;
-    setInterval(() => {
-        if(time <= 0) submitExam();
-        let m = Math.floor(time / 60);
-        let s = time % 60;
-        document.getElementById('countdown').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
-        time--;
-    }, 1000);
-</script>   
+        const timer = setInterval(() => {
+            timeInSeconds--;
+            let m = Math.floor(timeInSeconds / 60).toString().padStart(2, '0');
+            let s = (timeInSeconds % 60).toString().padStart(2, '0');
+            countdownEl.innerText = `${m}:${s}`;
+
+            if (timeInSeconds <= 0) {
+                clearInterval(timer);
+                alert("Đã hết thời gian làm bài! Hệ thống sẽ tự động nộp bài.");
+                form.submit();
+            }
+        }, 1000);
+
+        function confirmSubmit() {
+            if (confirm('Bạn có chắc chắn muốn nộp bài không?')) {
+                clearInterval(timer);
+                form.submit();
+            }
+        }
+    </script>
+}

@@ -1,23 +1,77 @@
-<div class="text-center mb-5 p-5 bg-primary text-white rounded shadow">
-    <h2>Kết quả bài làm</h2>
-    <div class="score-circle mx-auto my-3 d-flex align-items-center justify-content-center border border-white rounded-circle" style="width:150px; height:150px; border-width: 5px !important;">
-        <h1 class="m-0">@Model.Score <small>/495</small></h1>
-    </div>
-    <h4>@Model.CorrectCount / 100 câu đúng</h4>
-</div>
+@model BTGK_NHOM7.ToeicExams.Dto.ResultDto
+@{
+    ViewBag.Title = "Kết quả bài thi";
+}
 
-<div class="row">
-    @foreach(var part in Model.PartAnalysis) {
-        <div class="col-md-4">
-            <div class="card text-center shadow-sm">
-                <div class="card-header">Part @part.PartNumber</div>
-                <div class="card-body">
-                    <h3>@part.CorrectCount / @part.TotalCount</h3>
-                    <div class="progress">
-                        <div class="progress-bar" style="width: @part.Percentage%"></div>
+<style>
+    .score-circle {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        transition: transform 0.3s;
+    }
+    .score-circle:hover {
+        transform: scale(1.05);
+    }
+    .part-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border-radius: 12px;
+    }
+    .part-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.1) !important;
+    }
+</style>
+
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <div class="container mt-5">
+        <div class="card shadow-lg border-0" style="border-radius: 15px;">
+            <div class="card-body py-5">
+                
+                <div class="text-center mb-5 pb-4 border-bottom">
+                    <h2 class="font-weight-bolder text-primary mb-4"><i class="fas fa-trophy text-warning mr-2"></i> KẾT QUẢ BÀI THI</h2>
+                    <div class="score-circle mx-auto my-4 d-flex align-items-center justify-content-center border border-white rounded-circle text-white" style="width:200px; height:200px; border-width: 8px !important;">
+                        <h1 class="m-0 display-4 font-weight-bold">@Model.Score <small style="font-size: 1.5rem; opacity: 0.8">/495</small></h1>
+                    </div>
+                    <h3 class="text-dark font-weight-bold mt-4">Bạn đã trả lời đúng <span class="text-success">@Model.CorrectCount</span> / @(Model.CorrectCount + Model.WrongCount + Model.SkipCount) câu</h3>
+                    
+                    <div class="mt-4 d-flex justify-content-center">
+                        <span class="badge badge-success mr-3 px-4 py-2 shadow-sm" style="font-size: 1.1rem;"><i class="fas fa-check-circle mr-1"></i> @Model.CorrectCount đúng</span>
+                        <span class="badge badge-danger mr-3 px-4 py-2 shadow-sm" style="font-size: 1.1rem;"><i class="fas fa-times-circle mr-1"></i> @Model.WrongCount sai</span>
+                        <span class="badge badge-warning px-4 py-2 shadow-sm text-dark" style="font-size: 1.1rem;"><i class="fas fa-minus-circle mr-1"></i> @Model.SkipCount bỏ qua</span>
                     </div>
                 </div>
+
+                @if (Model.PartAnalysis != null && Model.PartAnalysis.Any())
+                {
+                    <h4 class="text-muted font-weight-bold mb-4 px-md-3">Thống kê theo từng phần:</h4>
+                    <div class="row px-md-3">
+                        @foreach(var part in Model.PartAnalysis) {
+                            var progressColor = part.Percentage >= 80 ? "bg-success" : part.Percentage >= 50 ? "bg-warning" : "bg-danger";
+                            <div class="col-md-4 mb-4">
+                                <div class="card text-center shadow-sm h-100 border-0 part-card bg-light">
+                                    <div class="card-header border-0 bg-transparent font-weight-bold pt-4 pb-0 text-secondary" style="font-size: 1.2rem;">
+                                        <i class="fas fa-chart-pie text-info"></i> Part @part.PartNumber
+                                    </div>
+                                    <div class="card-body d-flex flex-column justify-content-center">
+                                        <h2 class="text-dark font-weight-bold mb-3">@part.CorrectCount <small class="text-muted" style="font-size: 1rem;">/ @part.TotalCount</small></h2>
+                                        <div class="progress rounded-pill shadow-sm" style="height: 12px;">
+                                            <div class="progress-bar @progressColor" role="progressbar" style="width: @part.Percentage%" aria-valuenow="@part.Percentage" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <small class="text-muted mt-3 font-weight-bold">Đạt tỷ lệ @part.Percentage%</small>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="text-center mt-5">
+                    <a asp-action="List" class="btn btn-primary btn-lg px-5 py-3 shadow" style="border-radius: 50px;">
+                        <i class="fas fa-list"></i> Về danh sách đề thi
+                    </a>
+                </div>
+
             </div>
         </div>
-    }
+    </div>
 </div>

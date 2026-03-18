@@ -183,36 +183,64 @@ namespace BTGK_NHOM7.ToeicExams
             return exam;
         }
 
-        public async Task<ResultDto> CalculateScore(List<UserAnswer> answers)
+        public async Task<ResultDto> CalculateScore(int examId, List<UserAnswer> answers)
         {
             var result = new ResultDto();
-            if (answers == null || !answers.Any()) return result;
+            
+            var exam = await _examRepository.GetAll()
+                .Include(e => e.Parts)
+                    .ThenInclude(p => p.Passages)
+                .Include(e => e.Parts)
+                    .ThenInclude(p => p.Questions)
+                .FirstOrDefaultAsync(e => e.Id == examId);
 
-            var questionIds = answers.Select(a => a.QuestionId).ToList();
-            var dbQuestions = await _questionRepository.GetAllListAsync(q => questionIds.Contains(q.Id));
+            if (exam == null || answers == null || !answers.Any()) return result;
 
-            foreach (var ans in answers)
+            result.PartAnalysis = new List<PartAnalysisDto>();
+            int totalQuestions = 0;
+
+            foreach (var part in exam.Parts)
             {
-                var question = dbQuestions.FirstOrDefault(q => q.Id == ans.QuestionId);
-                if (question == null) continue;
+                var partDto = new PartAnalysisDto { PartNumber = part.PartNumber };
+                var partQuestions = part.Questions?.ToList() ?? new List<ToeicQuestion>();
+                
+                if (part.Passages != null)
+                {
+                    foreach (var passage in part.Passages)
+                    {
+                        if (passage.Questions != null) partQuestions.AddRange(passage.Questions);
+                    }
+                }
 
-                string userChoice = ans.SelectedAnswer?.Trim().ToUpper();
+                foreach (var q in partQuestions)
+                {
+                    partDto.TotalCount++;
+                    totalQuestions++;
+                    var ans = answers.FirstOrDefault(a => a.QuestionId == q.Id);
+                    string userChoice = ans?.SelectedAnswer?.Trim().ToUpper();
 
-                if (string.IsNullOrEmpty(userChoice))
-                {
-                    result.SkipCount++;
+                    if (string.IsNullOrEmpty(userChoice)) result.SkipCount++;
+                    else if (userChoice == q.CorrectAnswer)
+                    {
+                        result.CorrectCount++;
+                        partDto.CorrectCount++;
+                    }
+                    else result.WrongCount++;
                 }
-                else if (userChoice == question.CorrectAnswer)
-                {
-                    result.CorrectCount++;
-                }
-                else
-                {
-                    result.WrongCount++;
-                }
+                result.PartAnalysis.Add(partDto);
             }
+            
+            // Điểm TOEIC Reading tối đa 495, tính theo tỉ lệ phần trăm câu đúng
+            result.Score = totalQuestions > 0 ? (int)Math.Round((double)result.CorrectCount / totalQuestions * 495) : 0;
 
             return result;
+        }
+
+        public async Task<List<ToeicExam>> GetExamListAsync()
+        {
+            return await _examRepository.GetAll()
+                .OrderByDescending(e => e.CreationTime)
+                .ToListAsync();
         }
     }
 }
